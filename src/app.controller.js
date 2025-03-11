@@ -18,6 +18,8 @@ export const bootstrap = (app, express) => {
   app.use(express.urlencoded({ extended: true }));
   app.use((req, res, next) => {
     console.log(`📌 Received ${req.method} request on ${req.url}`);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
     next();
   });
   app.use("/request", requestController)
