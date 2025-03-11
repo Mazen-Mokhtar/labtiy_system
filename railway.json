@@ -1,0 +1,5 @@
+{
+    "deploy": {
+      "nodeVersion": "22.11.0"
+    }
+  }
