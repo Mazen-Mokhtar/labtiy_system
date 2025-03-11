@@ -7,9 +7,10 @@ import cors from "cors"
 
 export const bootstrap = (app, express) => {
   app.use(cors({
-    origin: '*', // Allow only your frontend origin
-    methods: ['GET', 'POST', 'PUT', 'DELETE', "PATCH"], // Specify allowed methods
-    allowedHeaders: ['Content-Type'], // Specify allowed headers
+    origin: '*', // لو فيه دومين معين، حطه هنا بدل "*"
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true, // جرب تضيف دي لو بتواجه مشاكل CORS
   }));
 
   conctionDB()
