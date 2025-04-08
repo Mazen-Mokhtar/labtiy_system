@@ -155,8 +155,22 @@ export const confirmReq = async (req, res, next) => {
 
             const imageUrl = requset.picOfReq.secure_url;
             const qrSourceUrlShkikh = user.signaturePic.secure_url;
-            const qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
-            const qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
+            let qrSourceUrlFirstWitnesses = null;
+            if (requset.firstWitnesses.status === true) {
+                qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
+                await QRCode.toFile(qrCodePath2, qrSourceUrlFirstWitnesses);
+                const qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
+                newImage.qrCodeUrl2 = qrResult2.secure_url;
+                fs.unlinkSync(qrCodePath2);
+            }
+            let qrSourceUrlSecWitnesses = null;
+            if (requset.secWitnesses.status === true) {
+                qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
+                await QRCode.toFile(qrCodePath3, qrSourceUrlSecWitnesses);
+                const qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
+                newImage.qrCodeUrl3 = qrResult3.secure_url;
+                fs.unlinkSync(qrCodePath3);
+            }
             console.log({
                 imageUrl,
                 qrSourceUrlFirstWitnesses,
@@ -245,8 +259,16 @@ export const confirmReq = async (req, res, next) => {
 
             // إضافة الـ QR Codes
             const qrImage1 = await axios.get(qrCodeUrl1, { responseType: 'arraybuffer' }).then(res => res.data);
-            const qrImage2 = await axios.get(qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
-            const qrImage3 = await axios.get(qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+            if (qrSourceUrlFirstWitnesses) {
+                const qrImage2 = await axios.get(newImage.qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+                const qrPng2 = await pdfDoc.embedPng(qrImage2);
+                page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+            }
+            if (qrSourceUrlSecWitnesses) {
+                const qrImage3 = await axios.get(newImage.qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+                const qrPng3 = await pdfDoc.embedPng(qrImage3);
+                page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+            }
             console.log(6);
 
             const qrPng1 = await pdfDoc.embedPng(qrImage1);
