@@ -65,7 +65,7 @@ export const getReqs = async (req, res, next) => {
     if (user.role == "afrad") {
         await user.populate([{
             path: "myRequests",
-            select: "orderNumber documentType branchType firstWitnesses secWitnesses Sheikh createdAt picOfReq",
+            select: "orderNumber documentType branchType firstWitnesses secWitnesses Sheikh createdAt picOfReq docAuthenticationNumber",
             populate: [{ path: "firstWitnesses.userId", select: "userName status" }, { path: "secWitnesses.userId", select: "userName status" }, { path: "Sheikh.userId", select: "userName status" }],
             options: { sort: { createdAt: -1 } }
         }])
@@ -78,6 +78,14 @@ export const getReqs = async (req, res, next) => {
             options: { sort: { createdAt: -1 } }
         }])
         respons = user.myRequests
+        for (let request of respons) {
+            if (request.docAuthenticationNumber) {
+                const imageData = await ImageModel.findOne({ givenNumber: request.docAuthenticationNumber });
+                if (imageData) {
+                    request.pdfUrl = imageData; // إضافة بيانات الصورة إلى الطلب
+                }
+            }
+        }
     } else if (user.role == "she5") {
 
         await user.populate([{
@@ -468,7 +476,7 @@ export const orderNumber = async (req, res, next) => {
 
 
 export const elshahada = async (req, res, next) => {
-    
+
     const { search, id } = req.body;
     console.log({ search, id });
     if (!search || !id)
