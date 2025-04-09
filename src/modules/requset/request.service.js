@@ -301,243 +301,271 @@ export const confirmReq = async (req, res, next) => {
             }
 
             // إضافة الـ QR Codes
-            const qrImage1 = await axios.get(qrCodeUrl1, { responseType: 'arraybuffer' }).then(res => res.data);
-            if (qrSourceUrlFirstWitnesses) {
-                const qrImage2 = await axios.get(newImage.qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
-                const qrPng2 = await pdfDoc.embedPng(qrImage2);
-                page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
-            }
-            if (qrSourceUrlSecWitnesses) {
-                const qrImage3 = await axios.get(newImage.qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
-                const qrPng3 = await pdfDoc.embedPng(qrImage3);
-                page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
-            }
-            console.log(6);
-
-            const qrPng1 = await pdfDoc.embedPng(qrImage1);
-            if (qrSourceUrlFirstWitnesses) {
-                const qrImage2 = await axios.get(newImage.qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
-                const qrPng2 = await pdfDoc.embedPng(qrImage2);
-                page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
-            }
-            if (qrSourceUrlSecWitnesses) {
-                const qrImage3 = await axios.get(newImage.qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
-                const qrPng3 = await pdfDoc.embedPng(qrImage3);
-                page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
-            }
-            console.log(7);
-
-            page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
-            page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
-            page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
-
-            // إضافة الـ Thumbnail
-            try {
-                // التحقق من عنوان URL
-                if (!thumbnailUrl || !thumbnailUrl.startsWith('http')) {
-                    throw new Error('عنوان URL للصورة المصغرة غير صالح');
+            if (qrCodeUrl1) {
+                try {
+                    const qrImage1 = await axios.get(qrCodeUrl1, { responseType: 'arraybuffer' }).then(res => res.data);
+                    const qrPng1 = await pdfDoc.embedPng(qrImage1);
+                    page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
+                    console.log("QR1 added successfully");
+                } catch (error) {
+                    console.error("Failed to add QR1:", error.message);
                 }
-
-                // جلب الصورة باستخدام axios
-                const thumbnailResponse = await axios.get(thumbnailUrl, {
-                    responseType: 'arraybuffer',
-                    timeout: 10000,
-                    headers: {
-                        'Accept': 'image/*',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-
-                let thumbnailImage = Buffer.from(thumbnailResponse.data);
-                console.log('حجم المخزن المؤقت للصورة:', thumbnailImage.length);
-
-                const magicNumbers = thumbnailImage.toString('hex', 0, 8);
-                console.log('الأرقام السحرية:', magicNumbers);
-
-                let thumbnailEmbedded;
-
-                if (magicNumbers.startsWith('89504e47')) {
-                    // PNG
-                    thumbnailEmbedded = await pdfDoc.embedPng(thumbnailImage);
-                } else if (magicNumbers.startsWith('ffd8ff')) {
-                    // JPEG - التحقق من صلاحية JPEG وإصلاحه إذا لزم الأمر
-                    try {
-                        thumbnailEmbedded = await pdfDoc.embedJpg(thumbnailImage);
-                    } catch (jpegError) {
-                        console.log('الصورة JPEG تالفة، يتم إصلاحها باستخدام sharp:', jpegError.message);
-                        thumbnailImage = await sharp(thumbnailImage)
-                            .jpeg() // تحويل إلى JPEG صالح
-                            .toBuffer();
-                        thumbnailEmbedded = await pdfDoc.embedJpg(thumbnailImage);
-                    }
-                } else {
-                    // تنسيق غير مدعوم، تحويله إلى PNG
-                    console.log('تنسيق غير مدعوم، يتم التحويل إلى PNG:', magicNumbers);
-                    thumbnailImage = await sharp(thumbnailImage)
-                        .png()
-                        .toBuffer();
-                    thumbnailEmbedded = await pdfDoc.embedPng(thumbnailImage);
-                }
-
-                page.drawImage(thumbnailEmbedded, {
-                    x: 70,
-                    y: 230.33,
-                    width: 150,
-                    height: 150
-                });
-            } catch (error) {
-                console.error('خطأ في معالجة الصورة المصغرة:', {
-                    message: error.message || 'خطأ غير محدد',
-                    url: thumbnailUrl,
-                    stack: error.stack || 'لا يوجد تتبع للخطأ'
-                });
-                throw new Error('فشل في تضمين الصورة المصغرة: ' + (error.message || 'خطأ غير محدد'));
-            }
-
-            // إضافة البيانات بدل "الثراجة"
-            let yPosition = 600;
-            page.drawText(`${requset.userId.userName}`, {
-                x: 663.00,
-                y: 430.00,
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0),
-            });
-            page.drawText(`${requset.docAuthenticationNumber}`, {
-                x: 663.00,
-                y: 321.00,
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0),
-            });
-            yPosition -= 20;
-            page.drawText(`${currentDate.toLocaleDateString('ar-EG')}`, {
-                x: 663.00,
-                y: 218.00,
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0),
-            });
-            yPosition -= 20;
-            page.drawText(`${requset.Sheikh.userId.userName || 'غير متوفر'}`, {
-                x: 663.00,
-                y: 61.00,
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0),
-            });
-            page.drawText(`${requset.documentType || 'غير متوفر'}`, {
-                x: 663.00,
-                y: 375.00,
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0),
-            });
-            yPosition -= 20;
-            page.drawText(`${requset.firstWitnesses.userId.userName || 'غير متوفر'}`, {
-                x: 663.00,
-                y: 167.00,
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0),
-            });
-            yPosition -= 20;
-            page.drawText(` ${requset.secWitnesses.userId.userName || 'غير متوفر'}`, {
-                x: 663.00,
-                y: 113.00,
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0),
-            });
-
-            // حفظ الـ PDF المعدل
-            const pdfBytesModified = await pdfDoc.save();
-            fs.writeFileSync('output.pdf', pdfBytesModified);
-            console.log(9);
-
-            console.log('PDF generated at:', 'output.pdf');
-            const stats = fs.statSync('output.pdf');
-            console.log('حجم الملف:', stats.size, 'بايت');
-            const pdfResult = await cloud().uploader.upload('output.pdf', {
-                resource_type: 'raw',
-                folder: 'pdfs',
-            });
-            const pdfUrl = pdfResult.secure_url;
-            console.log('Uploaded PDF URL:', pdfUrl);
-
-            newImage.qrCodeUrl1 = qrCodeUrl1;
-            newImage.qrCodeUrl2 = qrCodeUrl2;
-            newImage.qrCodeUrl3 = qrCodeUrl3;
-            newImage.pdfUrl = pdfUrl;
-            await newImage.save();
-
-            fs.unlinkSync('output.pdf');
-            fs.unlinkSync(qrCodePath1);
-            fs.unlinkSync(qrCodePath2);
-            fs.unlinkSync(qrCodePath3);
-        } else {
-            requset.Sheikh.status = false;
-        }
-    } else {
-        return next(new Error("Server Error"))
-    }
-
-    console.log(requset);
-    if (requset.secWitnesses.status != undefined && requset.firstWitnesses.status != undefined && requset.Sheikh.status == undefined) {
-
-        await User.updateOne({ _id: requset.Sheikh.userId }, { $addToSet: { myRequests: requset._id } })
-    }
-    await requset.save()
-
-    let respons = [];
-    if (user.role == "afrad") {
-        await user.populate([{
-            path: "myRequests",
-            select: "orderNumber documentType branchType firstWitnesses secWitnesses Sheikh createdAt picOfReq",
-            populate: [{ path: "firstWitnesses.userId", select: "userName status" }, { path: "secWitnesses.userId", select: "userName status" }, { path: "Sheikh.userId", select: "userName status" }]
-        }])
-        respons = user.myRequests;
-    } else if (user.role == "shahd") {
-        await user.populate([{
-            path: "myRequests",
-            select: "orderNumber userId documentType createdAt picOfReq",
-            populate: [{ path: "userId", select: "userName" }]
-        }])
-        console.log({ user });
-        console.log({ Data: user.myRequests });
-
-        respons = user.myRequests
-    } else if (user.role == "she5") {
-        console.log("fgfgfg");
-
-        await user.populate([{
-            path: "myRequests",
-            select: "orderNumber userId firstWitnesses secWitnesses documentType createdAt picOfReq",
-            populate: [{ path: "userId", select: "userName" }]
-        }])
-        console.log(user.myRequests);
-        const myUser = user.toObject()
-        respons = myUser.myRequests;
-
-        respons = respons.map((obj) => {
-            console.log(obj);
-
-            if (obj.firstWitnesses.status && obj.secWitnesses.status) {
-                obj.success = true
-                return obj
             } else {
-                obj.success = false
-                return obj
+                console.log("qrCodeUrl1 is null, skipping QR1");
             }
-        })
+
+            if (qrSourceUrlFirstWitnesses && qrCodeUrl2) {
+                try {
+                    const qrImage2 = await axios.get(qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+                    const qrPng2 = await pdfDoc.embedPng(qrImage2);
+                    page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+                    console.log("QR2 added successfully");
+                } catch (error) {
+                    console.error("Failed to add QR2:", error.message);
+                }
+            } else {
+                console.log("qrCodeUrl2 or qrSourceUrlFirstWitnesses is null, skipping QR2");
+            }
+
+            if (qrSourceUrlSecWitnesses && qrCodeUrl3) {
+                try {
+                    const qrImage3 = await axios.get(qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+                    const qrPng3 = await pdfDoc.embedPng(qrImage3);
+                    page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+                    console.log("QR3 added successfully");
+                } catch (error) {
+                    console.error("Failed to add QR3:", error.message);
+                }
+            } else {
+                console.log("qrCodeUrl3 or qrSourceUrlSecWitnesses is null, skipping QR3");
+            }
+
+            console.log(6); // نقطة تتبع جديدة
+
+        const qrPng1 = await pdfDoc.embedPng(qrImage1);
+        if (qrSourceUrlFirstWitnesses) {
+            const qrImage2 = await axios.get(newImage.qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+            const qrPng2 = await pdfDoc.embedPng(qrImage2);
+            page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+        }
+        if (qrSourceUrlSecWitnesses) {
+            const qrImage3 = await axios.get(newImage.qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+            const qrPng3 = await pdfDoc.embedPng(qrImage3);
+            page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+        }
+        console.log(7);
+
+        page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
+        page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+        page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+
+        // إضافة الـ Thumbnail
+        try {
+            // التحقق من عنوان URL
+            if (!thumbnailUrl || !thumbnailUrl.startsWith('http')) {
+                throw new Error('عنوان URL للصورة المصغرة غير صالح');
+            }
+
+            // جلب الصورة باستخدام axios
+            const thumbnailResponse = await axios.get(thumbnailUrl, {
+                responseType: 'arraybuffer',
+                timeout: 10000,
+                headers: {
+                    'Accept': 'image/*',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+
+            let thumbnailImage = Buffer.from(thumbnailResponse.data);
+            console.log('حجم المخزن المؤقت للصورة:', thumbnailImage.length);
+
+            const magicNumbers = thumbnailImage.toString('hex', 0, 8);
+            console.log('الأرقام السحرية:', magicNumbers);
+
+            let thumbnailEmbedded;
+
+            if (magicNumbers.startsWith('89504e47')) {
+                // PNG
+                thumbnailEmbedded = await pdfDoc.embedPng(thumbnailImage);
+            } else if (magicNumbers.startsWith('ffd8ff')) {
+                // JPEG - التحقق من صلاحية JPEG وإصلاحه إذا لزم الأمر
+                try {
+                    thumbnailEmbedded = await pdfDoc.embedJpg(thumbnailImage);
+                } catch (jpegError) {
+                    console.log('الصورة JPEG تالفة، يتم إصلاحها باستخدام sharp:', jpegError.message);
+                    thumbnailImage = await sharp(thumbnailImage)
+                        .jpeg() // تحويل إلى JPEG صالح
+                        .toBuffer();
+                    thumbnailEmbedded = await pdfDoc.embedJpg(thumbnailImage);
+                }
+            } else {
+                // تنسيق غير مدعوم، تحويله إلى PNG
+                console.log('تنسيق غير مدعوم، يتم التحويل إلى PNG:', magicNumbers);
+                thumbnailImage = await sharp(thumbnailImage)
+                    .png()
+                    .toBuffer();
+                thumbnailEmbedded = await pdfDoc.embedPng(thumbnailImage);
+            }
+
+            page.drawImage(thumbnailEmbedded, {
+                x: 70,
+                y: 230.33,
+                width: 150,
+                height: 150
+            });
+        } catch (error) {
+            console.error('خطأ في معالجة الصورة المصغرة:', {
+                message: error.message || 'خطأ غير محدد',
+                url: thumbnailUrl,
+                stack: error.stack || 'لا يوجد تتبع للخطأ'
+            });
+            throw new Error('فشل في تضمين الصورة المصغرة: ' + (error.message || 'خطأ غير محدد'));
+        }
+
+        // إضافة البيانات بدل "الثراجة"
+        let yPosition = 600;
+        page.drawText(`${requset.userId.userName}`, {
+            x: 663.00,
+            y: 430.00,
+            size: 12,
+            font: arabicFont,
+            color: rgb(0, 0, 0),
+        });
+        page.drawText(`${requset.docAuthenticationNumber}`, {
+            x: 663.00,
+            y: 321.00,
+            size: 12,
+            font: arabicFont,
+            color: rgb(0, 0, 0),
+        });
+        yPosition -= 20;
+        page.drawText(`${currentDate.toLocaleDateString('ar-EG')}`, {
+            x: 663.00,
+            y: 218.00,
+            size: 12,
+            font: arabicFont,
+            color: rgb(0, 0, 0),
+        });
+        yPosition -= 20;
+        page.drawText(`${requset.Sheikh.userId.userName || 'غير متوفر'}`, {
+            x: 663.00,
+            y: 61.00,
+            size: 12,
+            font: arabicFont,
+            color: rgb(0, 0, 0),
+        });
+        page.drawText(`${requset.documentType || 'غير متوفر'}`, {
+            x: 663.00,
+            y: 375.00,
+            size: 12,
+            font: arabicFont,
+            color: rgb(0, 0, 0),
+        });
+        yPosition -= 20;
+        page.drawText(`${requset.firstWitnesses.userId.userName || 'غير متوفر'}`, {
+            x: 663.00,
+            y: 167.00,
+            size: 12,
+            font: arabicFont,
+            color: rgb(0, 0, 0),
+        });
+        yPosition -= 20;
+        page.drawText(` ${requset.secWitnesses.userId.userName || 'غير متوفر'}`, {
+            x: 663.00,
+            y: 113.00,
+            size: 12,
+            font: arabicFont,
+            color: rgb(0, 0, 0),
+        });
+
+        // حفظ الـ PDF المعدل
+        const pdfBytesModified = await pdfDoc.save();
+        fs.writeFileSync('output.pdf', pdfBytesModified);
+        console.log(9);
+
+        console.log('PDF generated at:', 'output.pdf');
+        const stats = fs.statSync('output.pdf');
+        console.log('حجم الملف:', stats.size, 'بايت');
+        const pdfResult = await cloud().uploader.upload('output.pdf', {
+            resource_type: 'raw',
+            folder: 'pdfs',
+        });
+        const pdfUrl = pdfResult.secure_url;
+        console.log('Uploaded PDF URL:', pdfUrl);
+
+        newImage.qrCodeUrl1 = qrCodeUrl1;
+        newImage.qrCodeUrl2 = qrCodeUrl2;
+        newImage.qrCodeUrl3 = qrCodeUrl3;
+        newImage.pdfUrl = pdfUrl;
+        await newImage.save();
+
+        fs.unlinkSync('output.pdf');
+        fs.unlinkSync(qrCodePath1);
+        fs.unlinkSync(qrCodePath2);
+        fs.unlinkSync(qrCodePath3);
     } else {
-        return next(new Error("Server Error"))
+        requset.Sheikh.status = false;
+    }
+} else {
+    return next(new Error("Server Error"))
     }
 
-    await user.save()
+console.log(requset);
+if (requset.secWitnesses.status != undefined && requset.firstWitnesses.status != undefined && requset.Sheikh.status == undefined) {
+
+    await User.updateOne({ _id: requset.Sheikh.userId }, { $addToSet: { myRequests: requset._id } })
+}
+await requset.save()
+
+let respons = [];
+if (user.role == "afrad") {
+    await user.populate([{
+        path: "myRequests",
+        select: "orderNumber documentType branchType firstWitnesses secWitnesses Sheikh createdAt picOfReq",
+        populate: [{ path: "firstWitnesses.userId", select: "userName status" }, { path: "secWitnesses.userId", select: "userName status" }, { path: "Sheikh.userId", select: "userName status" }]
+    }])
+    respons = user.myRequests;
+} else if (user.role == "shahd") {
+    await user.populate([{
+        path: "myRequests",
+        select: "orderNumber userId documentType createdAt picOfReq",
+        populate: [{ path: "userId", select: "userName" }]
+    }])
+    console.log({ user });
+    console.log({ Data: user.myRequests });
+
+    respons = user.myRequests
+} else if (user.role == "she5") {
+    console.log("fgfgfg");
+
+    await user.populate([{
+        path: "myRequests",
+        select: "orderNumber userId firstWitnesses secWitnesses documentType createdAt picOfReq",
+        populate: [{ path: "userId", select: "userName" }]
+    }])
+    console.log(user.myRequests);
+    const myUser = user.toObject()
+    respons = myUser.myRequests;
+
+    respons = respons.map((obj) => {
+        console.log(obj);
+
+        if (obj.firstWitnesses.status && obj.secWitnesses.status) {
+            obj.success = true
+            return obj
+        } else {
+            obj.success = false
+            return obj
+        }
+    })
+} else {
+    return next(new Error("Server Error"))
+}
+
+await user.save()
 
 
-    return res.status(200).json({ success: true, data: respons })
+return res.status(200).json({ success: true, data: respons })
 
 }
 
