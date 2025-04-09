@@ -259,20 +259,35 @@ export const confirmReq = async (req, res, next) => {
 
             try {
                 console.log("Step 4: Defining QR Code URLs");
-                try {
-                    console.log("qrResult1 before defining qrCodeUrl1:", qrResult1);
-                    qrCodeUrl1 = qrResult1 ? qrResult1.secure_url : null;
-                    console.log("qrResult2 before defining qrCodeUrl2:", qrResult2);
-                    qrCodeUrl2 = qrResult2 ? qrResult2.secure_url : null;
-                    console.log("qrResult3 before defining qrCodeUrl3:", qrResult3);
-                    qrCodeUrl3 = qrResult3 ? qrResult3.secure_url : null;
-                } catch (error) {
-                    console.error("Error defining QR Code URLs:", error.message);
-                    qrCodeUrl1 = null;
-                    qrCodeUrl2 = null;
-                    qrCodeUrl3 = null;
+                let qrCodeUrl1 = null;
+                let qrCodeUrl2 = null;
+                let qrCodeUrl3 = null;
+
+                console.log("qrResult1 before defining qrCodeUrl1:", qrResult1);
+                if (qrResult1 && qrResult1.secure_url) {
+                    qrCodeUrl1 = qrResult1.secure_url;
+                } else {
+                    console.log("qrResult1 is invalid or missing secure_url");
                 }
-                // تحميل النموذج الأصلي
+
+                console.log("qrResult2 before defining qrCodeUrl2:", qrResult2);
+                if (qrResult2 && qrResult2.secure_url) {
+                    qrCodeUrl2 = qrResult2.secure_url;
+                } else {
+                    console.log("qrResult2 is invalid or missing secure_url");
+                }
+
+                console.log("qrResult3 before defining qrCodeUrl3:", qrResult3);
+                if (qrResult3 && qrResult3.secure_url) {
+                    qrCodeUrl3 = qrResult3.secure_url;
+                } else {
+                    console.log("qrResult3 is invalid or missing secure_url");
+                }
+
+                console.log("qrCodeUrl1 value:", qrCodeUrl1);
+                console.log("qrCodeUrl2 value:", qrCodeUrl2);
+                console.log("qrCodeUrl3 value:", qrCodeUrl3);
+
                 console.log("Step 5: Loading PDF template");
                 const templatePath = path.join(__dirname, 'وي.pdf');
                 if (!fs.existsSync(templatePath)) {
@@ -281,11 +296,9 @@ export const confirmReq = async (req, res, next) => {
                 const pdfBytes = fs.readFileSync(templatePath);
                 const pdfDoc = await PDFDocument.load(pdfBytes);
 
-                // إضافة fontkit لـ pdf-lib
                 console.log("Step 6: Registering fontkit");
                 pdfDoc.registerFontkit(fontkit);
 
-                // إضافة خط عربي
                 console.log("Step 7: Embedding Arabic font");
                 const fontPath = path.join(__dirname, 'fonts', 'Arial.ttf');
                 if (!fs.existsSync(fontPath)) {
@@ -303,22 +316,12 @@ export const confirmReq = async (req, res, next) => {
                     font: arabicFont,
                     color: rgb(0, 0, 0),
                 });
-                console.log(5); // هذا السطر يجب أن يظهر الآن إذا نجح كل شيء
-            } catch (error) {
-                console.error("Error in PDF generation:", error.message, error.stack);
-                throw error; // إعادة رمي الخطأ لمعالجته في المستوى الأعلى
-            }
+                console.log(5);
 
-            // إضافة الـ QR Codes
-            console.log("Step 9: Starting QR Code addition");
-
-            // التحقق من qrCodeUrl1 بأمان
-            console.log("Checking qrCodeUrl1 condition");
-            try {
-                if (qrCodeUrl1 !== null && qrCodeUrl1 !== undefined) {
-
+                console.log("Step 9: Starting QR Code addition");
+                console.log("Checking qrCodeUrl1 condition");
+                if (qrCodeUrl1) {
                     console.log("Attempting to fetch qrCodeUrl1:", qrCodeUrl1);
-
                     try {
                         const qrImage1 = await axios.get(qrCodeUrl1, {
                             responseType: 'arraybuffer',
@@ -332,12 +335,12 @@ export const confirmReq = async (req, res, next) => {
                         console.error("Error fetching or embedding QR1:", error.message, error.response?.status);
                     }
                 } else {
-                    console.log("qrCodeUrl1 is null or undefined, skipping QR1");
+                    console.log("qrCodeUrl1 is null, skipping QR1");
                 }
 
                 console.log(6);
 
-                if (qrSourceUrlFirstWitnesses && qrCodeUrl2 !== null && qrCodeUrl2 !== undefined) {
+                if (qrSourceUrlFirstWitnesses && qrCodeUrl2) {
                     console.log("Attempting to fetch qrCodeUrl2:", qrCodeUrl2);
                     try {
                         const qrImage2 = await axios.get(qrCodeUrl2, {
@@ -351,12 +354,12 @@ export const confirmReq = async (req, res, next) => {
                         console.error("Error fetching or embedding QR2:", error.message);
                     }
                 } else {
-                    console.log("qrCodeUrl2 or qrSourceUrlFirstWitnesses is null/undefined, skipping QR2");
+                    console.log("qrCodeUrl2 or qrSourceUrlFirstWitnesses is null, skipping QR2");
                 }
 
                 console.log(7);
 
-                if (qrSourceUrlSecWitnesses && qrCodeUrl3 !== null && qrCodeUrl3 !== undefined) {
+                if (qrSourceUrlSecWitnesses && qrCodeUrl3) {
                     console.log("Attempting to fetch qrCodeUrl3:", qrCodeUrl3);
                     try {
                         const qrImage3 = await axios.get(qrCodeUrl3, {
@@ -370,7 +373,7 @@ export const confirmReq = async (req, res, next) => {
                         console.error("Error fetching or embedding QR3:", error.message);
                     }
                 } else {
-                    console.log("qrCodeUrl3 or qrSourceUrlSecWitnesses is null/undefined, skipping QR3");
+                    console.log("qrCodeUrl3 or qrSourceUrlSecWitnesses is null, skipping QR3");
                 }
 
                 console.log(8);
