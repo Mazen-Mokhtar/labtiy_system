@@ -163,7 +163,13 @@ export const confirmReq = async (req, res, next) => {
             const qrSourceUrlShkikh = user.signaturePic.secure_url;
             let qrSourceUrlFirstWitnesses = null;
             let qrSourceUrlSecWitnesses = null;
-
+            const newImage = new ImageModel({
+                givenNumber: requset.docAuthenticationNumber,
+                imageUrl,
+                qrSourceUrlShkikh,
+                qrSourceUrlFirstWitnesses,
+                qrSourceUrlSecWitnesses,
+            });
             if (requset.firstWitnesses.status === true) {
                 qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
                 await QRCode.toFile('qr2.png', qrSourceUrlFirstWitnesses);
@@ -187,13 +193,6 @@ export const confirmReq = async (req, res, next) => {
             });
 
             // 1. حفظ البيانات الأولية في MongoDB
-            const newImage = new ImageModel({
-                givenNumber: requset.docAuthenticationNumber,
-                imageUrl,
-                qrSourceUrlShkikh,
-                qrSourceUrlFirstWitnesses,
-                qrSourceUrlSecWitnesses,
-            });
             await newImage.save();
             console.log(1);
 
