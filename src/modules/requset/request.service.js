@@ -782,7 +782,7 @@ export const confirmReq = async (req, res, next) => {
                 page.drawImage(qrPng3, { x: 305, y: 62.00, width: 45, height: 45 });
             }
             console.log(6);
-// 467
+            // 467
             const qrPng1 = await pdfDoc.embedPng(qrImage1);
             console.log(7);
 
@@ -923,15 +923,14 @@ export const confirmReq = async (req, res, next) => {
             console.log('Uploaded PDF URL:', pdfUrl);
 
             newImage.qrCodeUrl1 = qrCodeUrl1;
-            newImage.qrCodeUrl2 = qrCodeUrl2;
-            newImage.qrCodeUrl3 = qrCodeUrl3;
+            if (qrCodeUrl2) newImage.qrCodeUrl2 = qrCodeUrl2;
+            if (qrCodeUrl3) newImage.qrCodeUrl3 = qrCodeUrl3;
             newImage.pdfUrl = pdfUrl;
             await newImage.save();
 
-            fs.unlinkSync('output.pdf');
-            fs.unlinkSync(qrCodePath1);
-            fs.unlinkSync(qrCodePath2);
-            fs.unlinkSync(qrCodePath3);
+            ['output.pdf', qrCodePath1, qrCodePath2, qrCodePath3].forEach(file => {
+                if (fs.existsSync(file)) fs.unlinkSync(file);
+            });
         } else {
             requset.Sheikh.status = false;
         }
