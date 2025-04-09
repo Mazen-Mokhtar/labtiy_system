@@ -172,6 +172,11 @@ export const confirmReq = async (req, res, next) => {
             });
             if (requset.firstWitnesses.status === true) {
                 qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
+
+                if (!qrSourceUrlFirstWitnesses || typeof qrSourceUrlFirstWitnesses !== 'string') {
+                    throw new Error('Invalid QR source URL for first witness');
+                }
+
                 await QRCode.toFile('qr2.png', qrSourceUrlFirstWitnesses);
                 const qrResult2 = await cloud().uploader.upload('qr2.png', { folder: 'qrcodes' });
                 newImage.qrCodeUrl2 = qrResult2.secure_url;
@@ -180,6 +185,11 @@ export const confirmReq = async (req, res, next) => {
 
             if (requset.secWitnesses.status === true) {
                 qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
+
+                if (!qrSourceUrlSecWitnesses || typeof qrSourceUrlSecWitnesses !== 'string') {
+                    throw new Error('Invalid QR source URL for second witness');
+                }
+
                 await QRCode.toFile('qr3.png', qrSourceUrlSecWitnesses);
                 const qrResult3 = await cloud().uploader.upload('qr3.png', { folder: 'qrcodes' });
                 newImage.qrCodeUrl3 = qrResult3.secure_url;
@@ -224,8 +234,6 @@ export const confirmReq = async (req, res, next) => {
             const qrCodePath3 = 'qr3.png';
 
             await QRCode.toFile(qrCodePath1, qrSourceUrlShkikh);
-            await QRCode.toFile(qrCodePath2, qrSourceUrlFirstWitnesses);
-            await QRCode.toFile(qrCodePath3, qrSourceUrlSecWitnesses);
             console.log(3);
 
             const qrResult1 = await cloud().uploader.upload(qrCodePath1, { folder: 'qrcodes' });
