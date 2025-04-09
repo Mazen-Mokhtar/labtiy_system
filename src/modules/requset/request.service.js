@@ -301,46 +301,65 @@ export const confirmReq = async (req, res, next) => {
             }
 
             // إضافة الـ QR Codes
+            console.log("Step 9: Starting QR Code addition");
             if (qrCodeUrl1) {
+                console.log("Attempting to fetch qrCodeUrl1:", qrCodeUrl1);
                 try {
-                    const qrImage1 = await axios.get(qrCodeUrl1, { responseType: 'arraybuffer' }).then(res => res.data);
+                    const qrImage1 = await axios.get(qrCodeUrl1, {
+                        responseType: 'arraybuffer',
+                        timeout: 10000 // إضافة مهلة لتجنب التعليق
+                    }).then(res => res.data);
+                    console.log("qrImage1 fetched successfully, length:", qrImage1.length);
                     const qrPng1 = await pdfDoc.embedPng(qrImage1);
                     page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
-                    console.log("QR1 added successfully");
+                    console.log("QR1 embedded successfully");
                 } catch (error) {
-                    console.error("Failed to add QR1:", error.message);
+                    console.error("Error fetching or embedding QR1:", error.message, error.response?.status);
                 }
             } else {
-                console.log("qrCodeUrl1 is null, skipping QR1");
+                console.log("qrCodeUrl1 is null or undefined, skipping QR1");
             }
 
+            console.log(6); // نقطة تتبع بعد QR1
+
             if (qrSourceUrlFirstWitnesses && qrCodeUrl2) {
+                console.log("Attempting to fetch qrCodeUrl2:", qrCodeUrl2);
                 try {
-                    const qrImage2 = await axios.get(qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+                    const qrImage2 = await axios.get(qrCodeUrl2, {
+                        responseType: 'arraybuffer',
+                        timeout: 10000
+                    }).then(res => res.data);
                     const qrPng2 = await pdfDoc.embedPng(qrImage2);
                     page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
-                    console.log("QR2 added successfully");
+                    console.log("QR2 embedded successfully");
                 } catch (error) {
-                    console.error("Failed to add QR2:", error.message);
+                    console.error("Error fetching or embedding QR2:", error.message);
                 }
             } else {
                 console.log("qrCodeUrl2 or qrSourceUrlFirstWitnesses is null, skipping QR2");
             }
 
+            console.log(7); // نقطة تتبع بعد QR2
+
             if (qrSourceUrlSecWitnesses && qrCodeUrl3) {
+                console.log("Attempting to fetch qrCodeUrl3:", qrCodeUrl3);
                 try {
-                    const qrImage3 = await axios.get(qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+                    const qrImage3 = await axios.get(qrCodeUrl3, {
+                        responseType: 'arraybuffer',
+                        timeout: 10000
+                    }).then(res => res.data);
                     const qrPng3 = await pdfDoc.embedPng(qrImage3);
                     page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
-                    console.log("QR3 added successfully");
+                    console.log("QR3 embedded successfully");
                 } catch (error) {
-                    console.error("Failed to add QR3:", error.message);
+                    console.error("Error fetching or embedding QR3:", error.message);
                 }
             } else {
                 console.log("qrCodeUrl3 or qrSourceUrlSecWitnesses is null, skipping QR3");
             }
 
-            console.log(6); // نقطة تتبع جديدة
+            console.log(8); // نقطة تتبع نهائية
+        
 
         const qrPng1 = await pdfDoc.embedPng(qrImage1);
         if (qrSourceUrlFirstWitnesses) {
