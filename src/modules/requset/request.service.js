@@ -254,36 +254,48 @@ export const confirmReq = async (req, res, next) => {
             }
             console.log(4);
 
-            const qrCodeUrl1 = qrResult1 ? qrResult1.secure_url : null;
-            const qrCodeUrl2 = qrResult2 ? qrResult2.secure_url : null;
-            const qrCodeUrl3 = qrResult3 ? qrResult3.secure_url : null;
+            try {
+                console.log("Step 4: Defining QR Code URLs");
+                const qrCodeUrl1 = qrResult1 ? qrResult1.secure_url : null;
+                const qrCodeUrl2 = qrResult2 ? qrResult2.secure_url : null;
+                const qrCodeUrl3 = qrResult3 ? qrResult3.secure_url : null;
 
-            // تحميل النموذج الأصلي
-            const templatePath = path.join(__dirname, 'وي.pdf');
-            if (!fs.existsSync(templatePath)) {
-                throw new Error('Template PDF not found at: ' + templatePath);
+                // تحميل النموذج الأصلي
+                console.log("Step 5: Loading PDF template");
+                const templatePath = path.join(__dirname, 'وي.pdf');
+                if (!fs.existsSync(templatePath)) {
+                    throw new Error('Template PDF not found at: ' + templatePath);
+                }
+                const pdfBytes = fs.readFileSync(templatePath);
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+
+                // إضافة fontkit لـ pdf-lib
+                console.log("Step 6: Registering fontkit");
+                pdfDoc.registerFontkit(fontkit);
+
+                // إضافة خط عربي
+                console.log("Step 7: Embedding Arabic font");
+                const fontPath = path.join(__dirname, 'fonts', 'Arial.ttf');
+                if (!fs.existsSync(fontPath)) {
+                    throw new Error('Font file not found at: ' + fontPath);
+                }
+                const fontBytes = fs.readFileSync(fontPath);
+                const arabicFont = await pdfDoc.embedFont(fontBytes);
+
+                console.log("Step 8: Drawing text on PDF");
+                const page = pdfDoc.getPage(0);
+                page.drawText(`${requset.createdAt.toLocaleDateString('ar-EG')}`, {
+                    x: 663.00,
+                    y: 269.00,
+                    size: 12,
+                    font: arabicFont,
+                    color: rgb(0, 0, 0),
+                });
+                console.log(5); // هذا السطر يجب أن يظهر الآن إذا نجح كل شيء
+            } catch (error) {
+                console.error("Error in PDF generation:", error.message, error.stack);
+                throw error; // إعادة رمي الخطأ لمعالجته في المستوى الأعلى
             }
-            const pdfBytes = fs.readFileSync(templatePath);
-            const pdfDoc = await PDFDocument.load(pdfBytes);
-
-            // إضافة fontkit لـ pdf-lib
-            pdfDoc.registerFontkit(fontkit);
-
-            // إضافة خط عربي
-            const fontBytes = fs.readFileSync(path.join(__dirname, 'fonts', 'Arial.ttf'));
-            const arabicFont = await pdfDoc.embedFont(fontBytes);
-
-            const page = pdfDoc.getPage(0);
-
-            // إضافة التاريخ من الـ OCR
-            page.drawText(`${requset.createdAt.toLocaleDateString('ar-EG')}`, {
-                x: 663.00,
-                y: 269.00, // في الأعلى
-                size: 12,
-                font: arabicFont,
-                color: rgb(0, 0, 0), // أسود
-            });
-            console.log(5);
 
             // إضافة الـ QR Codes
             const qrImage1 = await axios.get(qrCodeUrl1, { responseType: 'arraybuffer' }).then(res => res.data);
@@ -300,8 +312,16 @@ export const confirmReq = async (req, res, next) => {
             console.log(6);
 
             const qrPng1 = await pdfDoc.embedPng(qrImage1);
-            const qrPng2 = await pdfDoc.embedPng(qrImage2);
-            const qrPng3 = await pdfDoc.embedPng(qrImage3);
+            if (qrSourceUrlFirstWitnesses) {
+                const qrImage2 = await axios.get(newImage.qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+                const qrPng2 = await pdfDoc.embedPng(qrImage2);
+                page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+            }
+            if (qrSourceUrlSecWitnesses) {
+                const qrImage3 = await axios.get(newImage.qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+                const qrPng3 = await pdfDoc.embedPng(qrImage3);
+                page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+            }
             console.log(7);
 
             page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
