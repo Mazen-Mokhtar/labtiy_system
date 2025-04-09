@@ -128,6 +128,506 @@ export const getReqs = async (req, res, next) => {
 }
 
 
+// export const confirmReq = async (req, res, next) => {
+//     const { userId, reqId, status } = req.body;
+//     const requset = await Requset.findById(reqId)
+//     const user = await User.findByIdAndUpdate({ _id: userId }, { $pull: { myRequests: requset._id } }, { new: true });
+//     // console.log(requset)
+//     if (!user)
+//         return next(new Error(messageSystem.user.notFound, { cause: 404 }))
+//     if (!requset) return next(new Error("Requset Not Found"))
+//     if (requset.firstWitnesses.userId.toString() === userId) {
+//         requset.firstWitnesses.status = status
+//     } else if (requset.secWitnesses.userId.toString() === userId) {
+//         requset.secWitnesses.status = status
+//         console.log("__________________");
+
+//     } else if (requset.Sheikh.userId.toString() === userId) {
+//         console.log("________________");
+
+//         if (status) {
+//             requset.Sheikh.status = status;
+//             const currentDate = requset.givenExpier
+//             requset.feeStatus = true;
+//             console.log("__________________");
+
+//             // جلب البيانات من الـ populate
+//             await requset.populate([
+//                 { path: "userId", select: "signaturePic userName phone" },
+//                 { path: "firstWitnesses.userId", select: "signaturePic userName phone" },
+//                 { path: "secWitnesses.userId", select: "signaturePic userName phone" },
+//                 { path: "Sheikh.userId", select: "signaturePic userName phone" },
+//             ]);
+
+//             const imageUrl = requset.picOfReq.secure_url;
+//             const qrSourceUrlShkikh = user.signaturePic.secure_url;
+//             let qrSourceUrlFirstWitnesses = null;
+//             let qrSourceUrlSecWitnesses = null;
+//             const newImage = new ImageModel({
+//                 givenNumber: requset.docAuthenticationNumber,
+//                 imageUrl,
+//                 qrSourceUrlShkikh,
+//                 qrSourceUrlFirstWitnesses,
+//                 qrSourceUrlSecWitnesses,
+//             });
+//             if (requset.firstWitnesses.status === true) {
+//                 qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
+
+//                 if (!qrSourceUrlFirstWitnesses || typeof qrSourceUrlFirstWitnesses !== 'string') {
+//                     throw new Error('Invalid QR source URL for first witness');
+//                 }
+
+//                 await QRCode.toFile('qr2.png', qrSourceUrlFirstWitnesses);
+//                 const qrResult2 = await cloud().uploader.upload('qr2.png', { folder: 'qrcodes' });
+//                 newImage.qrCodeUrl2 = qrResult2.secure_url;
+//                 fs.unlinkSync('qr2.png');
+//             }
+
+//             if (requset.secWitnesses.status === true) {
+//                 qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
+
+//                 if (!qrSourceUrlSecWitnesses || typeof qrSourceUrlSecWitnesses !== 'string') {
+//                     throw new Error('Invalid QR source URL for second witness');
+//                 }
+
+//                 await QRCode.toFile('qr3.png', qrSourceUrlSecWitnesses);
+//                 const qrResult3 = await cloud().uploader.upload('qr3.png', { folder: 'qrcodes' });
+//                 newImage.qrCodeUrl3 = qrResult3.secure_url;
+//                 fs.unlinkSync('qr3.png');
+//             }
+//             console.log("requset.firstWitnesses.status:", requset.firstWitnesses.status);
+//             console.log("requset.secWitnesses.status:", requset.secWitnesses.status);
+//             console.log({
+//                 imageUrl,
+//                 qrSourceUrlFirstWitnesses,
+//                 qrSourceUrlSecWitnesses,
+//                 qrSourceUrlShkikh
+//             });
+
+//             // 1. حفظ البيانات الأولية في MongoDB
+//             await newImage.save();
+//             console.log(1);
+
+//             // 2. إنشاء Thumbnail من imageUrl
+//             const getPublicId = (url) => {
+//                 const parts = url.split('/');
+//                 const uploadIndex = parts.indexOf('upload');
+//                 return parts.slice(uploadIndex + 2).join('/').split('.')[0];
+//             };
+//             const thumbnailUrl = cloud().url(getPublicId(imageUrl), {
+//                 width: 300,
+//                 height: 300,
+//                 crop: 'scale',
+//                 quality: 100,
+//                 fetch_format: 'png'
+//             });
+//             console.log(2);
+//             console.log(thumbnailUrl)
+
+//             // try {   // 3. إنشاء الـ QR Codes باستخدام qrcode
+//             //     const thumbnailResponse = await axios.get(thumbnailUrl, { responseType: 'arraybuffer' });
+//             //     console.log('Thumbnail fetched successfully, size:', thumbnailResponse.data.length);
+//             // } catch (error) {
+//             //     console.error('Error fetching thumbnail:', error.message);
+//             // }cloudinary
+
+//             const qrCodePath1 = 'qr1.png';
+//             const qrCodePath2 = 'qr2.png';
+//             const qrCodePath3 = 'qr3.png';
+
+//             let qrResult1 = null;
+//             let qrResult2 = null;
+//             let qrResult3 = null;
+//             await QRCode.toFile(qrCodePath1, qrSourceUrlShkikh);
+//             console.log(3);
+
+//             if (fs.existsSync(qrCodePath1)) {
+//                 qrResult1 = await cloud().uploader.upload(qrCodePath1, { folder: 'qrcodes' });
+//                 newImage.qrCodeUrl1 = qrResult1.secure_url;
+//             }
+
+//             // Upload QR2 if exists
+//             if (fs.existsSync(qrCodePath2)) {
+//                 qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
+//                 newImage.qrCodeUrl2 = qrResult2.secure_url;
+//             }
+
+//             // Upload QR3 if exists
+//             if (fs.existsSync(qrCodePath3)) {
+//                 qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
+//                 newImage.qrCodeUrl3 = qrResult3.secure_url;
+//             }
+//             console.log(4);
+
+//             try {
+//                 console.log("Step 4: Defining QR Code URLs");
+//                 let qrCodeUrl1 = null;
+//                 let qrCodeUrl2 = null;
+//                 let qrCodeUrl3 = null;
+
+//                 console.log("qrResult1 before defining qrCodeUrl1:", qrResult1);
+//                 if (qrResult1 && qrResult1.secure_url) {
+//                     qrCodeUrl1 = qrResult1.secure_url;
+//                 } else {
+//                     console.log("qrResult1 is invalid or missing secure_url");
+//                 }
+
+//                 console.log("qrResult2 before defining qrCodeUrl2:", qrResult2);
+//                 if (qrResult2 && qrResult2.secure_url) {
+//                     qrCodeUrl2 = qrResult2.secure_url;
+//                 } else {
+//                     console.log("qrResult2 is invalid or missing secure_url");
+//                 }
+
+//                 console.log("qrResult3 before defining qrCodeUrl3:", qrResult3);
+//                 if (qrResult3 && qrResult3.secure_url) {
+//                     qrCodeUrl3 = qrResult3.secure_url;
+//                 } else {
+//                     console.log("qrResult3 is invalid or missing secure_url");
+//                 }
+
+//                 console.log("qrCodeUrl1 value:", qrCodeUrl1);
+//                 console.log("qrCodeUrl2 value:", qrCodeUrl2);
+//                 console.log("qrCodeUrl3 value:", qrCodeUrl3);
+
+//                 console.log("Step 5: Loading PDF template");
+//                 const templatePath = path.join(__dirname, 'وي.pdf');
+//                 if (!fs.existsSync(templatePath)) {
+//                     throw new Error('Template PDF not found at: ' + templatePath);
+//                 }
+//                 const pdfBytes = fs.readFileSync(templatePath);
+//                 const pdfDoc = await PDFDocument.load(pdfBytes);
+
+//                 console.log("Step 6: Registering fontkit");
+//                 pdfDoc.registerFontkit(fontkit);
+
+//                 console.log("Step 7: Embedding Arabic font");
+//                 const fontPath = path.join(__dirname, 'fonts', 'Arial.ttf');
+//                 if (!fs.existsSync(fontPath)) {
+//                     throw new Error('Font file not found at: ' + fontPath);
+//                 }
+//                 const fontBytes = fs.readFileSync(fontPath);
+//                 const arabicFont = await pdfDoc.embedFont(fontBytes);
+
+//                 console.log("Step 8: Drawing text on PDF");
+//                 const page = pdfDoc.getPage(0);
+//                 page.drawText(`${requset.createdAt.toLocaleDateString('ar-EG')}`, {
+//                     x: 663.00,
+//                     y: 269.00,
+//                     size: 12,
+//                     font: arabicFont,
+//                     color: rgb(0, 0, 0),
+//                 });
+//                 console.log(5);
+
+//                 console.log("Step 9: Starting QR Code addition");
+//                 console.log("Checking qrCodeUrl1 condition");
+//                 if (qrCodeUrl1) {
+//                     console.log("Attempting to fetch qrCodeUrl1:", qrCodeUrl1);
+//                     try {
+//                         const qrImage1 = await axios.get(qrCodeUrl1, {
+//                             responseType: 'arraybuffer',
+//                             timeout: 10000
+//                         }).then(res => res.data);
+//                         console.log("qrImage1 fetched successfully, length:", qrImage1.length);
+//                         const qrPng1 = await pdfDoc.embedPng(qrImage1);
+//                         page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
+//                         console.log("QR1 embedded successfully");
+//                     } catch (error) {
+//                         console.error("Error fetching or embedding QR1:", error.message, error.response?.status);
+//                     }
+//                 } else {
+//                     console.log("qrCodeUrl1 is null, skipping QR1");
+//                 }
+
+//                 console.log(6);
+
+//                 console.log("requset.firstWitnesses.status:", requset.firstWitnesses.status);
+//                 console.log("qrSourceUrlFirstWitnesses:", qrSourceUrlFirstWitnesses);
+//                 if (qrSourceUrlFirstWitnesses && qrCodeUrl2) {
+//                     console.log("Attempting to fetch qrCodeUrl2:", qrCodeUrl2);
+//                     try {
+//                         const qrImage2 = await axios.get(qrCodeUrl2, {
+//                             responseType: 'arraybuffer',
+//                             timeout: 10000
+//                         }).then(res => res.data);
+//                         const qrPng2 = await pdfDoc.embedPng(qrImage2);
+//                         page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+//                         console.log("QR2 embedded successfully");
+//                     } catch (error) {
+//                         console.error("Error fetching or embedding QR2:", error.message);
+//                     }
+//                 } else {
+//                     console.log("qrCodeUrl2 or qrSourceUrlFirstWitnesses is null, skipping QR2");
+//                 }
+
+//                 console.log(7);
+
+//                 console.log("requset.secWitnesses.status:", requset.secWitnesses.status);
+//                 console.log("qrSourceUrlSecWitnesses:", qrSourceUrlSecWitnesses);
+//                 if (qrSourceUrlSecWitnesses && qrCodeUrl3) {
+//                     console.log("Attempting to fetch qrCodeUrl3:", qrCodeUrl3);
+//                     try {
+//                         const qrImage3 = await axios.get(qrCodeUrl3, {
+//                             responseType: 'arraybuffer',
+//                             timeout: 10000
+//                         }).then(res => res.data);
+//                         const qrPng3 = await pdfDoc.embedPng(qrImage3);
+//                         page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+//                         console.log("QR3 embedded successfully");
+//                     } catch (error) {
+//                         console.error("Error fetching or embedding QR3:", error.message);
+//                     }
+//                 } else {
+//                     console.log("qrCodeUrl3 or qrSourceUrlSecWitnesses is null, skipping QR3");
+//                 }
+
+//                 console.log(8);
+
+//                 console.log("Step 10: Saving PDF and finalizing");
+//                 const pdfBytesFinal = await pdfDoc.save();
+//                 console.log("PDF saved successfully, length:", pdfBytesFinal.length);
+//                 fs.writeFileSync('output.pdf', pdfBytesFinal);
+//                 console.log("PDF written to file");
+//                 const pdfResult = await cloud().uploader.upload('output.pdf', { resource_type: 'raw', folder: 'pdfs' });
+//                 console.log("PDF uploaded to Cloudinary:", pdfResult.secure_url);
+//                 newImage.pdfUrl = pdfResult.secure_url;
+//                 await newImage.save();
+//                 console.log("Image model saved with PDF URL");
+//                 safeUnlink('output.pdf');
+//                 console.log("Step 11: PDF processing complete");
+//             } catch (error) {
+//                 console.error("Error in PDF generation:", error.message, error.stack);
+//                 throw error;
+//             }
+
+//             const qrPng1 = await pdfDoc.embedPng(qrImage1);
+//             if (qrSourceUrlFirstWitnesses) {
+//                 const qrImage2 = await axios.get(newImage.qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+//                 const qrPng2 = await pdfDoc.embedPng(qrImage2);
+//                 page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+//             }
+//             if (qrSourceUrlSecWitnesses) {
+//                 const qrImage3 = await axios.get(newImage.qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+//                 const qrPng3 = await pdfDoc.embedPng(qrImage3);
+//                 page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+//             }
+//             console.log(7);
+
+//             page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
+//             page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+//             page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+
+//             // إضافة الـ Thumbnail
+//             try {
+//                 // التحقق من عنوان URL
+//                 if (!thumbnailUrl || !thumbnailUrl.startsWith('http')) {
+//                     throw new Error('عنوان URL للصورة المصغرة غير صالح');
+//                 }
+
+//                 // جلب الصورة باستخدام axios
+//                 const thumbnailResponse = await axios.get(thumbnailUrl, {
+//                     responseType: 'arraybuffer',
+//                     timeout: 10000,
+//                     headers: {
+//                         'Accept': 'image/*',
+//                         'Cache-Control': 'no-cache'
+//                     }
+//                 });
+
+//                 let thumbnailImage = Buffer.from(thumbnailResponse.data);
+//                 console.log('حجم المخزن المؤقت للصورة:', thumbnailImage.length);
+
+//                 const magicNumbers = thumbnailImage.toString('hex', 0, 8);
+//                 console.log('الأرقام السحرية:', magicNumbers);
+
+//                 let thumbnailEmbedded;
+
+//                 if (magicNumbers.startsWith('89504e47')) {
+//                     // PNG
+//                     thumbnailEmbedded = await pdfDoc.embedPng(thumbnailImage);
+//                 } else if (magicNumbers.startsWith('ffd8ff')) {
+//                     // JPEG - التحقق من صلاحية JPEG وإصلاحه إذا لزم الأمر
+//                     try {
+//                         thumbnailEmbedded = await pdfDoc.embedJpg(thumbnailImage);
+//                     } catch (jpegError) {
+//                         console.log('الصورة JPEG تالفة، يتم إصلاحها باستخدام sharp:', jpegError.message);
+//                         thumbnailImage = await sharp(thumbnailImage)
+//                             .jpeg() // تحويل إلى JPEG صالح
+//                             .toBuffer();
+//                         thumbnailEmbedded = await pdfDoc.embedJpg(thumbnailImage);
+//                     }
+//                 } else {
+//                     // تنسيق غير مدعوم، تحويله إلى PNG
+//                     console.log('تنسيق غير مدعوم، يتم التحويل إلى PNG:', magicNumbers);
+//                     thumbnailImage = await sharp(thumbnailImage)
+//                         .png()
+//                         .toBuffer();
+//                     thumbnailEmbedded = await pdfDoc.embedPng(thumbnailImage);
+//                 }
+
+//                 page.drawImage(thumbnailEmbedded, {
+//                     x: 70,
+//                     y: 230.33,
+//                     width: 150,
+//                     height: 150
+//                 });
+//             } catch (error) {
+//                 console.error('خطأ في معالجة الصورة المصغرة:', {
+//                     message: error.message || 'خطأ غير محدد',
+//                     url: thumbnailUrl,
+//                     stack: error.stack || 'لا يوجد تتبع للخطأ'
+//                 });
+//                 throw new Error('فشل في تضمين الصورة المصغرة: ' + (error.message || 'خطأ غير محدد'));
+//             }
+
+//             // إضافة البيانات بدل "الثراجة"
+//             let yPosition = 600;
+//             page.drawText(`${requset.userId.userName}`, {
+//                 x: 663.00,
+//                 y: 430.00,
+//                 size: 12,
+//                 font: arabicFont,
+//                 color: rgb(0, 0, 0),
+//             });
+//             page.drawText(`${requset.docAuthenticationNumber}`, {
+//                 x: 663.00,
+//                 y: 321.00,
+//                 size: 12,
+//                 font: arabicFont,
+//                 color: rgb(0, 0, 0),
+//             });
+//             yPosition -= 20;
+//             page.drawText(`${currentDate.toLocaleDateString('ar-EG')}`, {
+//                 x: 663.00,
+//                 y: 218.00,
+//                 size: 12,
+//                 font: arabicFont,
+//                 color: rgb(0, 0, 0),
+//             });
+//             yPosition -= 20;
+//             page.drawText(`${requset.Sheikh.userId.userName || 'غير متوفر'}`, {
+//                 x: 663.00,
+//                 y: 61.00,
+//                 size: 12,
+//                 font: arabicFont,
+//                 color: rgb(0, 0, 0),
+//             });
+//             page.drawText(`${requset.documentType || 'غير متوفر'}`, {
+//                 x: 663.00,
+//                 y: 375.00,
+//                 size: 12,
+//                 font: arabicFont,
+//                 color: rgb(0, 0, 0),
+//             });
+//             yPosition -= 20;
+//             page.drawText(`${requset.firstWitnesses.userId.userName || 'غير متوفر'}`, {
+//                 x: 663.00,
+//                 y: 167.00,
+//                 size: 12,
+//                 font: arabicFont,
+//                 color: rgb(0, 0, 0),
+//             });
+//             yPosition -= 20;
+//             page.drawText(` ${requset.secWitnesses.userId.userName || 'غير متوفر'}`, {
+//                 x: 663.00,
+//                 y: 113.00,
+//                 size: 12,
+//                 font: arabicFont,
+//                 color: rgb(0, 0, 0),
+//             });
+
+//             // حفظ الـ PDF المعدل
+//             const pdfBytesModified = await pdfDoc.save();
+//             fs.writeFileSync('output.pdf', pdfBytesModified);
+//             console.log(9);
+
+//             console.log('PDF generated at:', 'output.pdf');
+//             const stats = fs.statSync('output.pdf');
+//             console.log('حجم الملف:', stats.size, 'بايت');
+//             const pdfResult = await cloud().uploader.upload('output.pdf', {
+//                 resource_type: 'raw',
+//                 folder: 'pdfs',
+//             });
+//             const pdfUrl = pdfResult.secure_url;
+//             console.log('Uploaded PDF URL:', pdfUrl);
+
+//             newImage.qrCodeUrl1 = qrCodeUrl1;
+//             newImage.qrCodeUrl2 = qrCodeUrl2;
+//             newImage.qrCodeUrl3 = qrCodeUrl3;
+//             newImage.pdfUrl = pdfUrl;
+//             await newImage.save();
+
+//             fs.unlinkSync('output.pdf');
+//             fs.unlinkSync(qrCodePath1);
+//             fs.unlinkSync(qrCodePath2);
+//             fs.unlinkSync(qrCodePath3);
+//         } else {
+//             requset.Sheikh.status = false;
+//         }
+//     } else {
+//         return next(new Error("Server Error"))
+//     }
+
+//     console.log(requset);
+//     if (requset.secWitnesses.status != undefined && requset.firstWitnesses.status != undefined && requset.Sheikh.status == undefined) {
+
+//         await User.updateOne({ _id: requset.Sheikh.userId }, { $addToSet: { myRequests: requset._id } })
+//     }
+//     await requset.save()
+
+//     let respons = [];
+//     if (user.role == "afrad") {
+//         await user.populate([{
+//             path: "myRequests",
+//             select: "orderNumber documentType branchType firstWitnesses secWitnesses Sheikh createdAt picOfReq",
+//             populate: [{ path: "firstWitnesses.userId", select: "userName status" }, { path: "secWitnesses.userId", select: "userName status" }, { path: "Sheikh.userId", select: "userName status" }]
+//         }])
+//         respons = user.myRequests;
+//     } else if (user.role == "shahd") {
+//         await user.populate([{
+//             path: "myRequests",
+//             select: "orderNumber userId documentType createdAt picOfReq",
+//             populate: [{ path: "userId", select: "userName" }]
+//         }])
+//         console.log({ user });
+//         console.log({ Data: user.myRequests });
+
+//         respons = user.myRequests
+//     } else if (user.role == "she5") {
+//         console.log("fgfgfg");
+
+//         await user.populate([{
+//             path: "myRequests",
+//             select: "orderNumber userId firstWitnesses secWitnesses documentType createdAt picOfReq",
+//             populate: [{ path: "userId", select: "userName" }]
+//         }])
+//         console.log(user.myRequests);
+//         const myUser = user.toObject()
+//         respons = myUser.myRequests;
+
+//         respons = respons.map((obj) => {
+//             console.log(obj);
+
+//             if (obj.firstWitnesses.status && obj.secWitnesses.status) {
+//                 obj.success = true
+//                 return obj
+//             } else {
+//                 obj.success = false
+//                 return obj
+//             }
+//         })
+//     } else {
+//         return next(new Error("Server Error"))
+//     }
+
+//     await user.save()
+
+
+//     return res.status(200).json({ success: true, data: respons })
+
+// }
+
 export const confirmReq = async (req, res, next) => {
     const { userId, reqId, status } = req.body;
     const requset = await Requset.findById(reqId)
@@ -161,42 +661,8 @@ export const confirmReq = async (req, res, next) => {
 
             const imageUrl = requset.picOfReq.secure_url;
             const qrSourceUrlShkikh = user.signaturePic.secure_url;
-            let qrSourceUrlFirstWitnesses = null;
-            let qrSourceUrlSecWitnesses = null;
-            const newImage = new ImageModel({
-                givenNumber: requset.docAuthenticationNumber,
-                imageUrl,
-                qrSourceUrlShkikh,
-                qrSourceUrlFirstWitnesses,
-                qrSourceUrlSecWitnesses,
-            });
-            if (requset.firstWitnesses.status === true) {
-                qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
-
-                if (!qrSourceUrlFirstWitnesses || typeof qrSourceUrlFirstWitnesses !== 'string') {
-                    throw new Error('Invalid QR source URL for first witness');
-                }
-
-                await QRCode.toFile('qr2.png', qrSourceUrlFirstWitnesses);
-                const qrResult2 = await cloud().uploader.upload('qr2.png', { folder: 'qrcodes' });
-                newImage.qrCodeUrl2 = qrResult2.secure_url;
-                fs.unlinkSync('qr2.png');
-            }
-
-            if (requset.secWitnesses.status === true) {
-                qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
-
-                if (!qrSourceUrlSecWitnesses || typeof qrSourceUrlSecWitnesses !== 'string') {
-                    throw new Error('Invalid QR source URL for second witness');
-                }
-
-                await QRCode.toFile('qr3.png', qrSourceUrlSecWitnesses);
-                const qrResult3 = await cloud().uploader.upload('qr3.png', { folder: 'qrcodes' });
-                newImage.qrCodeUrl3 = qrResult3.secure_url;
-                fs.unlinkSync('qr3.png');
-            }
-            console.log("requset.firstWitnesses.status:", requset.firstWitnesses.status);
-            console.log("requset.secWitnesses.status:", requset.secWitnesses.status);
+            const qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
+            const qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
             console.log({
                 imageUrl,
                 qrSourceUrlFirstWitnesses,
@@ -205,6 +671,13 @@ export const confirmReq = async (req, res, next) => {
             });
 
             // 1. حفظ البيانات الأولية في MongoDB
+            const newImage = new ImageModel({
+                givenNumber: requset.docAuthenticationNumber,
+                imageUrl,
+                qrSourceUrlShkikh,
+                qrSourceUrlFirstWitnesses,
+                qrSourceUrlSecWitnesses,
+            });
             await newImage.save();
             console.log(1);
 
@@ -235,183 +708,56 @@ export const confirmReq = async (req, res, next) => {
             const qrCodePath2 = 'qr2.png';
             const qrCodePath3 = 'qr3.png';
 
-            let qrResult1 = null;
-            let qrResult2 = null;
-            let qrResult3 = null;
             await QRCode.toFile(qrCodePath1, qrSourceUrlShkikh);
+            await QRCode.toFile(qrCodePath2, qrSourceUrlFirstWitnesses);
+            await QRCode.toFile(qrCodePath3, qrSourceUrlSecWitnesses);
             console.log(3);
 
-            if (fs.existsSync(qrCodePath1)) {
-                qrResult1 = await cloud().uploader.upload(qrCodePath1, { folder: 'qrcodes' });
-                newImage.qrCodeUrl1 = qrResult1.secure_url;
-            }
-
-            // Upload QR2 if exists
-            if (fs.existsSync(qrCodePath2)) {
-                qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
-                newImage.qrCodeUrl2 = qrResult2.secure_url;
-            }
-
-            // Upload QR3 if exists
-            if (fs.existsSync(qrCodePath3)) {
-                qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
-                newImage.qrCodeUrl3 = qrResult3.secure_url;
-            }
+            const qrResult1 = await cloud().uploader.upload(qrCodePath1, { folder: 'qrcodes' });
+            const qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
+            const qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
             console.log(4);
 
-            try {
-                console.log("Step 4: Defining QR Code URLs");
-                let qrCodeUrl1 = null;
-                let qrCodeUrl2 = null;
-                let qrCodeUrl3 = null;
+            const qrCodeUrl1 = qrResult1.secure_url;
+            const qrCodeUrl2 = qrResult2.secure_url;
+            const qrCodeUrl3 = qrResult3.secure_url;
 
-                console.log("qrResult1 before defining qrCodeUrl1:", qrResult1);
-                if (qrResult1 && qrResult1.secure_url) {
-                    qrCodeUrl1 = qrResult1.secure_url;
-                } else {
-                    console.log("qrResult1 is invalid or missing secure_url");
-                }
-
-                console.log("qrResult2 before defining qrCodeUrl2:", qrResult2);
-                if (qrResult2 && qrResult2.secure_url) {
-                    qrCodeUrl2 = qrResult2.secure_url;
-                } else {
-                    console.log("qrResult2 is invalid or missing secure_url");
-                }
-
-                console.log("qrResult3 before defining qrCodeUrl3:", qrResult3);
-                if (qrResult3 && qrResult3.secure_url) {
-                    qrCodeUrl3 = qrResult3.secure_url;
-                } else {
-                    console.log("qrResult3 is invalid or missing secure_url");
-                }
-
-                console.log("qrCodeUrl1 value:", qrCodeUrl1);
-                console.log("qrCodeUrl2 value:", qrCodeUrl2);
-                console.log("qrCodeUrl3 value:", qrCodeUrl3);
-
-                console.log("Step 5: Loading PDF template");
-                const templatePath = path.join(__dirname, 'وي.pdf');
-                if (!fs.existsSync(templatePath)) {
-                    throw new Error('Template PDF not found at: ' + templatePath);
-                }
-                const pdfBytes = fs.readFileSync(templatePath);
-                const pdfDoc = await PDFDocument.load(pdfBytes);
-
-                console.log("Step 6: Registering fontkit");
-                pdfDoc.registerFontkit(fontkit);
-
-                console.log("Step 7: Embedding Arabic font");
-                const fontPath = path.join(__dirname, 'fonts', 'Arial.ttf');
-                if (!fs.existsSync(fontPath)) {
-                    throw new Error('Font file not found at: ' + fontPath);
-                }
-                const fontBytes = fs.readFileSync(fontPath);
-                const arabicFont = await pdfDoc.embedFont(fontBytes);
-
-                console.log("Step 8: Drawing text on PDF");
-                const page = pdfDoc.getPage(0);
-                page.drawText(`${requset.createdAt.toLocaleDateString('ar-EG')}`, {
-                    x: 663.00,
-                    y: 269.00,
-                    size: 12,
-                    font: arabicFont,
-                    color: rgb(0, 0, 0),
-                });
-                console.log(5);
-
-                console.log("Step 9: Starting QR Code addition");
-                console.log("Checking qrCodeUrl1 condition");
-                if (qrCodeUrl1) {
-                    console.log("Attempting to fetch qrCodeUrl1:", qrCodeUrl1);
-                    try {
-                        const qrImage1 = await axios.get(qrCodeUrl1, {
-                            responseType: 'arraybuffer',
-                            timeout: 10000
-                        }).then(res => res.data);
-                        console.log("qrImage1 fetched successfully, length:", qrImage1.length);
-                        const qrPng1 = await pdfDoc.embedPng(qrImage1);
-                        page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
-                        console.log("QR1 embedded successfully");
-                    } catch (error) {
-                        console.error("Error fetching or embedding QR1:", error.message, error.response?.status);
-                    }
-                } else {
-                    console.log("qrCodeUrl1 is null, skipping QR1");
-                }
-
-                console.log(6);
-
-                console.log("requset.firstWitnesses.status:", requset.firstWitnesses.status);
-                console.log("qrSourceUrlFirstWitnesses:", qrSourceUrlFirstWitnesses);
-                if (qrSourceUrlFirstWitnesses && qrCodeUrl2) {
-                    console.log("Attempting to fetch qrCodeUrl2:", qrCodeUrl2);
-                    try {
-                        const qrImage2 = await axios.get(qrCodeUrl2, {
-                            responseType: 'arraybuffer',
-                            timeout: 10000
-                        }).then(res => res.data);
-                        const qrPng2 = await pdfDoc.embedPng(qrImage2);
-                        page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
-                        console.log("QR2 embedded successfully");
-                    } catch (error) {
-                        console.error("Error fetching or embedding QR2:", error.message);
-                    }
-                } else {
-                    console.log("qrCodeUrl2 or qrSourceUrlFirstWitnesses is null, skipping QR2");
-                }
-
-                console.log(7);
-
-                console.log("requset.secWitnesses.status:", requset.secWitnesses.status);
-                console.log("qrSourceUrlSecWitnesses:", qrSourceUrlSecWitnesses);
-                if (qrSourceUrlSecWitnesses && qrCodeUrl3) {
-                    console.log("Attempting to fetch qrCodeUrl3:", qrCodeUrl3);
-                    try {
-                        const qrImage3 = await axios.get(qrCodeUrl3, {
-                            responseType: 'arraybuffer',
-                            timeout: 10000
-                        }).then(res => res.data);
-                        const qrPng3 = await pdfDoc.embedPng(qrImage3);
-                        page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
-                        console.log("QR3 embedded successfully");
-                    } catch (error) {
-                        console.error("Error fetching or embedding QR3:", error.message);
-                    }
-                } else {
-                    console.log("qrCodeUrl3 or qrSourceUrlSecWitnesses is null, skipping QR3");
-                }
-
-                console.log(8);
-
-                console.log("Step 10: Saving PDF and finalizing");
-                const pdfBytesFinal = await pdfDoc.save();
-                console.log("PDF saved successfully, length:", pdfBytesFinal.length);
-                fs.writeFileSync('output.pdf', pdfBytesFinal);
-                console.log("PDF written to file");
-                const pdfResult = await cloud().uploader.upload('output.pdf', { resource_type: 'raw', folder: 'pdfs' });
-                console.log("PDF uploaded to Cloudinary:", pdfResult.secure_url);
-                newImage.pdfUrl = pdfResult.secure_url;
-                await newImage.save();
-                console.log("Image model saved with PDF URL");
-                safeUnlink('output.pdf');
-                console.log("Step 11: PDF processing complete");
-            } catch (error) {
-                console.error("Error in PDF generation:", error.message, error.stack);
-                throw error;
+            // تحميل النموذج الأصلي
+            const templatePath = path.join(__dirname, 'وي.pdf');
+            if (!fs.existsSync(templatePath)) {
+                throw new Error('Template PDF not found at: ' + templatePath);
             }
+            const pdfBytes = fs.readFileSync(templatePath);
+            const pdfDoc = await PDFDocument.load(pdfBytes);
+
+            // إضافة fontkit لـ pdf-lib
+            pdfDoc.registerFontkit(fontkit);
+
+            // إضافة خط عربي
+            const fontBytes = fs.readFileSync(path.join(__dirname, 'fonts', 'Arial.ttf'));
+            const arabicFont = await pdfDoc.embedFont(fontBytes);
+
+            const page = pdfDoc.getPage(0);
+
+            // إضافة التاريخ من الـ OCR
+            page.drawText(`${requset.createdAt.toLocaleDateString('ar-EG')}`, {
+                x: 663.00,
+                y: 269.00, // في الأعلى
+                size: 12,
+                font: arabicFont,
+                color: rgb(0, 0, 0), // أسود
+            });
+            console.log(5);
+
+            // إضافة الـ QR Codes
+            const qrImage1 = await axios.get(qrCodeUrl1, { responseType: 'arraybuffer' }).then(res => res.data);
+            const qrImage2 = await axios.get(qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+            const qrImage3 = await axios.get(qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+            console.log(6);
 
             const qrPng1 = await pdfDoc.embedPng(qrImage1);
-            if (qrSourceUrlFirstWitnesses) {
-                const qrImage2 = await axios.get(newImage.qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
-                const qrPng2 = await pdfDoc.embedPng(qrImage2);
-                page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
-            }
-            if (qrSourceUrlSecWitnesses) {
-                const qrImage3 = await axios.get(newImage.qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
-                const qrPng3 = await pdfDoc.embedPng(qrImage3);
-                page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
-            }
+            const qrPng2 = await pdfDoc.embedPng(qrImage2);
+            const qrPng3 = await pdfDoc.embedPng(qrImage3);
             console.log(7);
 
             page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
