@@ -54,7 +54,7 @@ export const sendRequest = async (req, res, next) => {
 export const getReqs = async (req, res, next) => {
     const { id } = req.body
     const user = await User.findById(id)
-    console.log(user)
+    // console.log(user)
     if (!user) {
         return next(new Error("User Not Found"))
     }
@@ -69,7 +69,20 @@ export const getReqs = async (req, res, next) => {
             populate: [{ path: "firstWitnesses.userId", select: "userName status" }, { path: "secWitnesses.userId", select: "userName status" }, { path: "Sheikh.userId", select: "userName status" }],
             options: { sort: { createdAt: -1 } }
         }])
-        respons = user.myRequests;
+        // console.log(user.myRequests)
+        const myUser = user.toObject()
+        respons = myUser.myRequests;
+        for (let request of respons) {
+            if (request.docAuthenticationNumber) {
+                const imageData = await ImageModel.findOne({ givenNumber: request.docAuthenticationNumber });
+                // console.log(imageData)
+                if (imageData) {
+                    request.pdfUrl = imageData.pdfUrl;
+                    console.log(request)
+
+                }
+            }
+        }
     } else if (user.role == "shahd") {
         await user.populate([{
             path: "myRequests",
@@ -78,14 +91,7 @@ export const getReqs = async (req, res, next) => {
             options: { sort: { createdAt: -1 } }
         }])
         respons = user.myRequests
-        for (let request of respons) {
-            if (request.docAuthenticationNumber) {
-                const imageData = await ImageModel.findOne({ givenNumber: request.docAuthenticationNumber });
-                if (imageData) {
-                    request.pdfUrl = imageData.pdfUrl; // إضافة بيانات الصورة إلى الطلب
-                }
-            }
-        }
+
     } else if (user.role == "she5") {
 
         await user.populate([{
@@ -100,12 +106,12 @@ export const getReqs = async (req, res, next) => {
             ],
             options: { sort: { createdAt: -1 } }
         }])
-        console.log(user.myRequests);
+        // console.log(user.myRequests);
         const myUser = user.toObject()
         respons = myUser.myRequests;
 
         respons = respons.map((obj) => {
-            console.log(obj);
+            // console.log(obj);
 
             if (obj.firstWitnesses.status && obj.secWitnesses.status) {
                 obj.success = true
@@ -156,20 +162,22 @@ export const confirmReq = async (req, res, next) => {
             const imageUrl = requset.picOfReq.secure_url;
             const qrSourceUrlShkikh = user.signaturePic.secure_url;
             let qrSourceUrlFirstWitnesses = null;
+            let qrSourceUrlSecWitnesses = null;
+
             if (requset.firstWitnesses.status === true) {
                 qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
-                await QRCode.toFile(qrCodePath2, qrSourceUrlFirstWitnesses);
-                const qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
+                await QRCode.toFile('qr2.png', qrSourceUrlFirstWitnesses);
+                const qrResult2 = await cloud().uploader.upload('qr2.png', { folder: 'qrcodes' });
                 newImage.qrCodeUrl2 = qrResult2.secure_url;
-                fs.unlinkSync(qrCodePath2);
+                fs.unlinkSync('qr2.png');
             }
-            let qrSourceUrlSecWitnesses = null;
+
             if (requset.secWitnesses.status === true) {
                 qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
-                await QRCode.toFile(qrCodePath3, qrSourceUrlSecWitnesses);
-                const qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
+                await QRCode.toFile('qr3.png', qrSourceUrlSecWitnesses);
+                const qrResult3 = await cloud().uploader.upload('qr3.png', { folder: 'qrcodes' });
                 newImage.qrCodeUrl3 = qrResult3.secure_url;
-                fs.unlinkSync(qrCodePath3);
+                fs.unlinkSync('qr3.png');
             }
             console.log({
                 imageUrl,
