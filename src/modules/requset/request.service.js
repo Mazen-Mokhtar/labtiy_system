@@ -236,9 +236,22 @@ export const confirmReq = async (req, res, next) => {
             await QRCode.toFile(qrCodePath1, qrSourceUrlShkikh);
             console.log(3);
 
-            const qrResult1 = await cloud().uploader.upload(qrCodePath1, { folder: 'qrcodes' });
-            const qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
-            const qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
+            if (fs.existsSync(qrCodePath1)) {
+                const qrResult1 = await cloud().uploader.upload(qrCodePath1, { folder: 'qrcodes' });
+                newImage.qrCodeUrl1 = qrResult1.secure_url;
+            }
+
+            // Upload QR2 if exists
+            if (fs.existsSync(qrCodePath2)) {
+                const qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
+                newImage.qrCodeUrl2 = qrResult2.secure_url;
+            }
+
+            // Upload QR3 if exists
+            if (fs.existsSync(qrCodePath3)) {
+                const qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
+                newImage.qrCodeUrl3 = qrResult3.secure_url;
+            }
             console.log(4);
 
             const qrCodeUrl1 = qrResult1.secure_url;
