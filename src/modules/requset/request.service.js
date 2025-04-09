@@ -82,7 +82,7 @@ export const getReqs = async (req, res, next) => {
             if (request.docAuthenticationNumber) {
                 const imageData = await ImageModel.findOne({ givenNumber: request.docAuthenticationNumber });
                 if (imageData) {
-                    request.pdfUrl = imageData; // إضافة بيانات الصورة إلى الطلب
+                    request.pdfUrl = imageData.pdfUrl; // إضافة بيانات الصورة إلى الطلب
                 }
             }
         }
