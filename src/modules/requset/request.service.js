@@ -661,8 +661,15 @@ export const confirmReq = async (req, res, next) => {
 
             const imageUrl = requset.picOfReq.secure_url;
             const qrSourceUrlShkikh = user.signaturePic.secure_url;
-            const qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
-            const qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
+            let qrSourceUrlFirstWitnesses = null;
+            let qrSourceUrlSecWitnesses = null;
+
+            if (requset.firstWitnesses.status === true) {
+                qrSourceUrlFirstWitnesses = requset.firstWitnesses.userId.signaturePic.secure_url;
+            }
+            if (requset.secWitnesses.status === true) {
+                qrSourceUrlSecWitnesses = requset.secWitnesses.userId.signaturePic.secure_url;
+            }
             console.log({
                 imageUrl,
                 qrSourceUrlFirstWitnesses,
@@ -709,18 +716,30 @@ export const confirmReq = async (req, res, next) => {
             const qrCodePath3 = 'qr3.png';
 
             await QRCode.toFile(qrCodePath1, qrSourceUrlShkikh);
-            await QRCode.toFile(qrCodePath2, qrSourceUrlFirstWitnesses);
-            await QRCode.toFile(qrCodePath3, qrSourceUrlSecWitnesses);
+            if (qrSourceUrlFirstWitnesses) {
+                await QRCode.toFile(qrCodePath2, qrSourceUrlFirstWitnesses);
+            }
+            if (qrSourceUrlSecWitnesses) {
+                await QRCode.toFile(qrCodePath3, qrSourceUrlSecWitnesses);
+            }
             console.log(3);
 
             const qrResult1 = await cloud().uploader.upload(qrCodePath1, { folder: 'qrcodes' });
-            const qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
-            const qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
+            let qrCodeUrl2 = null;
+            let qrCodeUrl3 = null;
+
+            if (qrSourceUrlFirstWitnesses) {
+                const qrResult2 = await cloud().uploader.upload(qrCodePath2, { folder: 'qrcodes' });
+                qrCodeUrl2 = qrResult2.secure_url;
+            }
+
+            if (qrSourceUrlSecWitnesses) {
+                const qrResult3 = await cloud().uploader.upload(qrCodePath3, { folder: 'qrcodes' });
+                qrCodeUrl3 = qrResult3.secure_url;
+            }
             console.log(4);
 
             const qrCodeUrl1 = qrResult1.secure_url;
-            const qrCodeUrl2 = qrResult2.secure_url;
-            const qrCodeUrl3 = qrResult3.secure_url;
 
             // تحميل النموذج الأصلي
             const templatePath = path.join(__dirname, 'وي.pdf');
@@ -751,18 +770,23 @@ export const confirmReq = async (req, res, next) => {
 
             // إضافة الـ QR Codes
             const qrImage1 = await axios.get(qrCodeUrl1, { responseType: 'arraybuffer' }).then(res => res.data);
-            const qrImage2 = await axios.get(qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
-            const qrImage3 = await axios.get(qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+            if (qrCodeUrl2) {
+                const qrImage2 = await axios.get(qrCodeUrl2, { responseType: 'arraybuffer' }).then(res => res.data);
+                const qrPng2 = await pdfDoc.embedPng(qrImage2);
+                page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
+            }
+
+            if (qrCodeUrl3) {
+                const qrImage3 = await axios.get(qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
+                const qrPng3 = await pdfDoc.embedPng(qrImage3);
+                page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+            }
             console.log(6);
 
             const qrPng1 = await pdfDoc.embedPng(qrImage1);
-            const qrPng2 = await pdfDoc.embedPng(qrImage2);
-            const qrPng3 = await pdfDoc.embedPng(qrImage3);
             console.log(7);
 
             page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
-            page.drawImage(qrPng2, { x: 390, y: 62.00, width: 45, height: 45 });
-            page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
 
             // إضافة الـ Thumbnail
             try {
