@@ -259,10 +259,19 @@ export const confirmReq = async (req, res, next) => {
 
             try {
                 console.log("Step 4: Defining QR Code URLs");
-                const qrCodeUrl1 = qrResult1 ? qrResult1.secure_url : null;
-                const qrCodeUrl2 = qrResult2 ? qrResult2.secure_url : null;
-                const qrCodeUrl3 = qrResult3 ? qrResult3.secure_url : null;
-
+                try {
+                    console.log("qrResult1 before defining qrCodeUrl1:", qrResult1);
+                    qrCodeUrl1 = qrResult1 ? qrResult1.secure_url : null;
+                    console.log("qrResult2 before defining qrCodeUrl2:", qrResult2);
+                    qrCodeUrl2 = qrResult2 ? qrResult2.secure_url : null;
+                    console.log("qrResult3 before defining qrCodeUrl3:", qrResult3);
+                    qrCodeUrl3 = qrResult3 ? qrResult3.secure_url : null;
+                } catch (error) {
+                    console.error("Error defining QR Code URLs:", error.message);
+                    qrCodeUrl1 = null;
+                    qrCodeUrl2 = null;
+                    qrCodeUrl3 = null;
+                }
                 // تحميل النموذج الأصلي
                 console.log("Step 5: Loading PDF template");
                 const templatePath = path.join(__dirname, 'وي.pdf');
