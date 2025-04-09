@@ -195,6 +195,8 @@ export const confirmReq = async (req, res, next) => {
                 newImage.qrCodeUrl3 = qrResult3.secure_url;
                 fs.unlinkSync('qr3.png');
             }
+            console.log("requset.firstWitnesses.status:", requset.firstWitnesses.status);
+            console.log("requset.secWitnesses.status:", requset.secWitnesses.status);
             console.log({
                 imageUrl,
                 qrSourceUrlFirstWitnesses,
@@ -340,6 +342,8 @@ export const confirmReq = async (req, res, next) => {
 
                 console.log(6);
 
+                console.log("requset.firstWitnesses.status:", requset.firstWitnesses.status);
+                console.log("qrSourceUrlFirstWitnesses:", qrSourceUrlFirstWitnesses);
                 if (qrSourceUrlFirstWitnesses && qrCodeUrl2) {
                     console.log("Attempting to fetch qrCodeUrl2:", qrCodeUrl2);
                     try {
@@ -359,6 +363,8 @@ export const confirmReq = async (req, res, next) => {
 
                 console.log(7);
 
+                console.log("requset.secWitnesses.status:", requset.secWitnesses.status);
+                console.log("qrSourceUrlSecWitnesses:", qrSourceUrlSecWitnesses);
                 if (qrSourceUrlSecWitnesses && qrCodeUrl3) {
                     console.log("Attempting to fetch qrCodeUrl3:", qrCodeUrl3);
                     try {
@@ -377,6 +383,19 @@ export const confirmReq = async (req, res, next) => {
                 }
 
                 console.log(8);
+
+                console.log("Step 10: Saving PDF and finalizing");
+                const pdfBytesFinal = await pdfDoc.save();
+                console.log("PDF saved successfully, length:", pdfBytesFinal.length);
+                fs.writeFileSync('output.pdf', pdfBytesFinal);
+                console.log("PDF written to file");
+                const pdfResult = await cloud().uploader.upload('output.pdf', { resource_type: 'raw', folder: 'pdfs' });
+                console.log("PDF uploaded to Cloudinary:", pdfResult.secure_url);
+                newImage.pdfUrl = pdfResult.secure_url;
+                await newImage.save();
+                console.log("Image model saved with PDF URL");
+                safeUnlink('output.pdf');
+                console.log("Step 11: PDF processing complete");
             } catch (error) {
                 console.error("Error in PDF generation:", error.message, error.stack);
                 throw error;
