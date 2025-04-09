@@ -254,9 +254,9 @@ export const confirmReq = async (req, res, next) => {
             }
             console.log(4);
 
-            const qrCodeUrl1 = qrResult1.secure_url;
-            const qrCodeUrl2 = qrResult2.secure_url;
-            const qrCodeUrl3 = qrResult3.secure_url;
+            const qrCodeUrl1 = qrResult1 ? qrResult1.secure_url : null;
+            const qrCodeUrl2 = qrResult2 ? qrResult2.secure_url : null;
+            const qrCodeUrl3 = qrResult3 ? qrResult3.secure_url : null;
 
             // تحميل النموذج الأصلي
             const templatePath = path.join(__dirname, 'وي.pdf');
