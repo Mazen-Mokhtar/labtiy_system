@@ -779,14 +779,14 @@ export const confirmReq = async (req, res, next) => {
             if (qrCodeUrl3) {
                 const qrImage3 = await axios.get(qrCodeUrl3, { responseType: 'arraybuffer' }).then(res => res.data);
                 const qrPng3 = await pdfDoc.embedPng(qrImage3);
-                page.drawImage(qrPng3, { x: 467, y: 62.00, width: 45, height: 45 });
+                page.drawImage(qrPng3, { x: 305, y: 62.00, width: 45, height: 45 });
             }
             console.log(6);
-
+// 467
             const qrPng1 = await pdfDoc.embedPng(qrImage1);
             console.log(7);
 
-            page.drawImage(qrPng1, { x: 305, y: 62.00, width: 45, height: 45 });
+            page.drawImage(qrPng1, { x: 467, y: 62.00, width: 45, height: 45 });
 
             // إضافة الـ Thumbnail
             try {
